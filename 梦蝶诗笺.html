@@ -151,7 +151,12 @@
   #writeMeta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   #saveState { font-size: 12px; letter-spacing: 1px; color: rgba(255,255,255,0.4); }
   #lineCount { font-size: 12px; letter-spacing: 1px; color: rgba(255,255,255,0.4); margin-left: auto; }
-  #themeRow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  #themeRow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  #matchMsg {
+    font-size: 12.5px; letter-spacing: 1.5px; color: #e8c56d;
+    min-height: 20px; margin-bottom: 8px;
+    opacity: 0; transition: opacity 0.5s;
+  }
   /* ================= 预览 ================= */
   #preview {
     position: fixed; inset: 0; z-index: 60; display: none;
@@ -316,6 +321,7 @@
       <span id="lineCount"></span>
     </div>
     <div id="themeRow"></div>
+    <div id="matchMsg"></div>
     <div class="row">
       <button class="btn primary" id="previewBtn">预 览</button>
       <button class="btn" id="statusBtn">发 表</button>
@@ -386,16 +392,16 @@
 <script>
 /* ================= 数据 ================= */
 const THEMES = { night:"黑夜", queen:"女王", lamps:"灯火", phoenix:"涅槃", moon:"月色", stars:"星辰", inkmist:"水墨", meadow:"绿野" };
+/* 意象关键词：[词, 权重]，权重越高越有代表性 */
 const KEYWORDS = {
-  moon: ["月","桂","婵娟"],
-  stars: ["星","银河","流星","宇宙","星辰"],
-  lamps: ["灯","烛","灯火"],
-  phoenix: ["涅槃","灰烬","燃","焚","愤怒","重生","火"],
-  queen: ["女王","伤痕","加冕","勋章","王冠","疮痍"],
-  inkmist: ["忧伤","水墨","颜色","紫","浅蓝","雾","氤氲"],
-  meadow: ["绿","花","云","风","草","野","琥珀"],
-  night: ["夜","酒","沉醉","黑","牢","流放"],
-  cover: ["蝶","蝴蝶"]
+  moon: [["月光",3],["月色",3],["月圆",3],["满月",3],["婵娟",3],["月",2],["清辉",2],["桂",1],["嫦娥",2],["潮汐",1],["银辉",2],["夜色",1],["梦境",1],["桃花源",1],["平行宇宙",1]],
+  stars: [["星辰",3],["星空",3],["银河",3],["流星",3],["星光",3],["星星",3],["繁星",3],["宇宙",2],["星",2],["浩渺",2],["苍穹",2],["夜空",2],["闪烁",1],["遥远",1]],
+  lamps: [["灯火",3],["灯光",3],["路灯",3],["烛火",3],["蜡烛",3],["灯",2],["烛",2],["熄灭",3],["一盏",3],["盏",2],["点亮",2],["微光",2],["昏黄",2],["守候",1],["窗口",1],["黑暗",1]],
+  phoenix: [["涅槃",4],["重生",3],["灰烬",3],["余烬",3],["浴火",3],["燃烧",3],["焚",2],["火焰",3],["火",2],["愤怒",2],["死去",2],["新生",2],["伤口",2],["缝合",2],["谋杀",2],["血",2]],
+  queen: [["女王",4],["加冕",4],["王冠",3],["勋章",3],["疮痍",3],["伤痕",3],["尊严",2],["骄傲",2],["接纳",2],["珍爱",2],["自己",1],["灵魂",1],["耀眼",2],["幻影",1],["评价",1]],
+  inkmist: [["水墨",4],["氤氲",3],["忧伤",3],["惆怅",3],["朦胧",3],["雾",2],["烟雨",2],["浅蓝",2],["浅紫",2],["深紫",2],["颜色",2],["晕染",2],["宣纸",2],["淡淡",1],["苦涩",2],["诗意",1]],
+  meadow: [["绿野",4],["原野",3],["草地",3],["旷野",3],["白云",3],["晚风",3],["蒲公英",3],["飞絮",3],["琥珀",3],["野花",3],["青草",3],["草",2],["绿",2],["花",2],["云",2],["风",2],["春",2],["山",1],["田野",2]],
+  night: [["黑夜",4],["深夜",3],["午夜",3],["夜里",3],["酒杯",3],["沉醉",3],["流放",3],["牢门",3],["囚",2],["黑",2],["夜",2],["酒",2],["醉",2],["孤独",2],["寂静",1],["失眠",2],["栀子",2],["悲伤",2],["破碎",2]]
 };
 const DAILY = [
 ["人生若只如初见","纳兰性德"],["山有木兮木有枝，心悦君兮君不知","《越人歌》"],["曾经沧海难为水，除却巫山不是云","元稹"],
@@ -1067,18 +1073,30 @@ dateInput.addEventListener("input", scheduleSave);
 bodyInput.addEventListener("input", () => { autoGrow(); updateLineCount(); scheduleSave(); });
 
 function suggestTheme(text) {
-  let best = "night", bestScore = 0;
+  const scores = {};
+  let best = null, bestScore = 0, hits = [];
   for (const [theme, words] of Object.entries(KEYWORDS)) {
     let score = 0;
-    for (const w of words) {
-      let i = -1;
-      while ((i = text.indexOf(w, i+1)) !== -1) score++;
+    const found = [];
+    for (const [w, weight] of words) {
+      let i = -1, n = 0;
+      while ((i = text.indexOf(w, i + 1)) !== -1) n++;
+      if (n) { score += weight * Math.min(n, 3); found.push(w); }
     }
-    if (score > bestScore) { bestScore = score; best = theme; }
+    scores[theme] = score;
+    if (score > bestScore) { bestScore = score; best = theme; hits = found; }
   }
-  return best;
+  return { theme: best, score: bestScore, hits };
 }
 const themeRow = document.getElementById("themeRow");
+const matchMsg = document.getElementById("matchMsg");
+function showMatchMsg(txt) {
+  if (!matchMsg) return;
+  matchMsg.textContent = txt;
+  matchMsg.style.opacity = "1";
+  clearTimeout(matchMsg._t);
+  matchMsg._t = setTimeout(() => { matchMsg.style.opacity = "0"; }, 4000);
+}
 function renderThemeRow() {
   const p = currentPoem();
   themeRow.innerHTML = "";
@@ -1086,10 +1104,20 @@ function renderThemeRow() {
   auto.className = "chip suggest";
   auto.textContent = "✧ 自动匹配";
   auto.addEventListener("click", () => {
-    if (!p) return;
-    const th = suggestTheme(titleInput.value + bodyInput.value);
-    p.theme = th; saveStore();
-    switchTheme(th); renderThemeRow();
+    const cur = currentPoem();
+    if (!cur) { showMatchMsg("先在诗库里新建或选一首诗"); return; }
+    const title = titleInput.value.trim(), body = bodyInput.value.trim();
+    if (!title && !body) { showMatchMsg("先写下几句，我再依意象匹配氛围"); return; }
+    // 标题最能代表主旨，权重加倍
+    const r = suggestTheme((title + "\n").repeat(3) + body);
+    if (!r.theme || r.score < 2) {
+      showMatchMsg("没读出明显意象，可以自己挑一个氛围");
+      return;
+    }
+    cur.theme = r.theme; saveStore();
+    switchTheme(r.theme); renderThemeRow();
+    const words = r.hits.slice(0, 3).join("、");
+    showMatchMsg("✧ 匹配「" + THEMES[r.theme] + "」" + (words ? "　因为读到：" + words : ""));
   });
   themeRow.appendChild(auto);
   for (const [key, name] of Object.entries(THEMES)) {
