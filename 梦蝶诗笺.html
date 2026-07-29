@@ -1041,7 +1041,9 @@ function autoGrow() {
   bodyInput.style.height = Math.max(bodyInput.scrollHeight + 4, window.innerHeight * 0.42) + "px";
 }
 function growWhenVisible() {
-  requestAnimationFrame(() => { autoGrow(); requestAnimationFrame(autoGrow); });
+  autoGrow();                       // 可见时立即生效
+  setTimeout(autoGrow, 0);          // 样式/布局稳定后再量一次
+  setTimeout(autoGrow, 150);        // 字体或异步内容到位后兜底
 }
 window.addEventListener("resize", growWhenVisible);
 function updateLineCount() {
