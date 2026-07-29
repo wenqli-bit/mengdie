@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>梦蝶诗笺 · 创作工作台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; }
+  body {
+    font-family: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    color: rgba(255,255,255,0.92);
+    background: #08080d;
+    height: 100dvh; overflow: hidden;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  .bg-layer { position: fixed; inset: 0; z-index: 0; opacity: 0; transition: opacity 1.6s ease; }
+  .bg-layer.visible { opacity: 1; }
+  #particles { position: fixed; inset: 0; z-index: 1; width: 100%; height: 100%; }
+  .vignette {
+    position: fixed; inset: 0; z-index: 2; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%);
+  }
+  /* ================= 侧边栏 ================= */
+  #sidebar {
+    position: fixed; top: 0; bottom: 0; left: 0; width: 210px; z-index: 40;
+    background: rgba(10,10,18,0.88); backdrop-filter: blur(12px);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    display: flex; flex-direction: column;
+    padding: calc(24px + env(safe-area-inset-top)) 0 calc(18px + env(safe-area-inset-bottom));
+  }
+  #sidebar .brand {
+    padding: 0 22px 22px; font-size: 17px; letter-spacing: 5px; font-weight: 500;
+  }
+  #sidebar .brand small { display: block; font-size: 10px; letter-spacing: 3px; color: rgba(255,255,255,0.4); margin-top: 5px; font-weight: 300; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    background: none; border: none; color: rgba(255,255,255,0.6);
+    font-size: 14.5px; letter-spacing: 3px; text-align: left;
+    padding: 14px 22px; width: 100%;
+    border-left: 2px solid transparent;
+    transition: all 0.3s; min-height: 48px;
+  }
+  .nav-item:hover { color: #fff; background: rgba(255,255,255,0.04); }
+  .nav-item.active { color: #fff; border-left-color: #b9a7e8; background: rgba(150,130,220,0.12); }
+  .nav-item .ico { width: 20px; text-align: center; opacity: 0.8; }
+  #sidebar .side-foot { margin-top: auto; padding: 14px 22px 0; font-size: 10.5px; letter-spacing: 2px; color: rgba(255,255,255,0.3); line-height: 1.8; }
+  /* 手机端侧栏 */
+  #menuBtn {
+    display: none; position: fixed; z-index: 45;
+    top: calc(10px + env(safe-area-inset-top)); left: 12px;
+    width: 42px; height: 42px; border-radius: 12px;
+    background: rgba(15,15,26,0.75); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.85);
+    font-size: 17px;
+  }
+  #sideMask { position: fixed; inset: 0; z-index: 38; background: rgba(0,0,0,0.45); display: none; }
+  /* ================= 内容区 ================= */
+  #content {
+    position: relative; z-index: 5;
+    margin-left: 210px; height: 100dvh;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: calc(28px + env(safe-area-inset-top)) 5vw calc(40px + env(safe-area-inset-bottom));
+    scrollbar-width: none;
+  }
+  #content::-webkit-scrollbar { display: none; }
+  .page { display: none; max-width: 760px; margin: 0 auto; }
+  .page.active { display: block; }
+  .page-title { font-size: 19px; letter-spacing: 6px; font-weight: 500; margin-bottom: 6px; }
+  .page-sub { font-size: 12px; letter-spacing: 2px; color: rgba(255,255,255,0.42); margin-bottom: 26px; }
+  /* ================= 灵感角（首页） ================= */
+  .card {
+    background: rgba(15,15,28,0.55); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+    padding: 20px 20px; margin-bottom: 16px;
+  }
+  .card .c-label { font-size: 10.5px; letter-spacing: 4px; color: rgba(255,255,255,0.4); margin-bottom: 10px; }
+  #dailyText { font-size: 16px; line-height: 1.9; letter-spacing: 1.5px; }
+  #dailyAuthor { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 6px; letter-spacing: 2px; }
+  .sent-card {
+    position: relative;
+    background: rgba(15,15,28,0.55); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+    padding: 18px 52px 18px 20px; margin-bottom: 12px;
+  }
+  .sent-card .s-text { font-size: 15px; line-height: 1.85; letter-spacing: 1.5px; color: rgba(255,255,255,0.88); }
+  .sent-card .s-fav {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: rgba(255,255,255,0.4);
+    font-size: 19px; padding: 10px;
+  }
+  .sent-card .s-fav.faved { color: #e8a0b8; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 22px; }
+  .btn {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.16);
+    color: rgba(255,255,255,0.8); border-radius: 999px;
+    padding: 10px 18px; font-size: 13.5px; letter-spacing: 2px;
+    transition: background 0.3s; min-height: 44px;
+  }
+  .btn:hover { background: rgba(255,255,255,0.14); }
+  .btn.primary { background: rgba(150,130,220,0.22); border-color: rgba(170,150,240,0.5); }
+  .btn.warn { border-color: rgba(240,140,140,0.4); color: rgba(240,160,160,0.9); }
+  #aiMsg, #sparkMsg2 { font-size: 12px; color: rgba(255,255,255,0.45); letter-spacing: 1px; margin-bottom: 14px; line-height: 1.7; }
+  #notesInput {
+    width: 100%; min-height: 120px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    color: inherit; font-family: inherit; font-size: 16px; line-height: 1.9;
+    padding: 14px; outline: none; resize: vertical;
+  }
+  #assocResults { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7); border-radius: 999px;
+    padding: 8px 15px; font-size: 13px; letter-spacing: 1.5px;
+    transition: all 0.3s; min-height: 40px;
+  }
+  .chip:hover { border-color: rgba(255,255,255,0.45); color: #fff; }
+  .chip.active { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.6); color: #fff; }
+  .chip.suggest { border-color: rgba(232,197,109,0.55); color: #e8c56d; }
+  /* ================= 写作页 · 纸笺 ================= */
+  #paper {
+    background:
+      radial-gradient(ellipse at 28% 12%, rgba(255,255,255,0.55) 0%, transparent 55%),
+      linear-gradient(108deg, #f8f2e2 0%, #f3ecda 55%, #eee4cd 100%);
+    border-radius: 8px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.35);
+    border: 1px solid rgba(120,105,80,0.3);
+    padding: 30px 26px 38px;
+    margin-bottom: 18px;
+  }
+  #paper input, #paper textarea {
+    background: none; border: none; outline: none;
+    font-family: inherit; color: #3b342c; caret-color: #6b5a3e;
+    width: 100%;
+  }
+  #titleInput { font-size: 22px; font-weight: 500; letter-spacing: 6px; text-align: center; }
+  #titleInput::placeholder, #bodyInput::placeholder { color: rgba(90,78,58,0.35); }
+  #dateInput {
+    font-size: 12px; letter-spacing: 3px; text-align: center;
+    color: rgba(90,78,58,0.55); margin-top: 8px;
+  }
+  #paper .paper-rule { height: 1px; background: rgba(110,95,70,0.25); margin: 16px 0 4px; }
+  #bodyInput {
+    font-size: 17px; line-height: 38px; letter-spacing: 1.5px;
+    min-height: 46dvh; resize: none; overflow: hidden;
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 37px, rgba(110,95,70,0.16) 37px, rgba(110,95,70,0.16) 38px);
+    background-attachment: local;
+  }
+  #writeMeta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  #saveState { font-size: 12px; letter-spacing: 1px; color: rgba(255,255,255,0.4); }
+  #lineCount { font-size: 12px; letter-spacing: 1px; color: rgba(255,255,255,0.4); margin-left: auto; }
+  #themeRow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  /* ================= 预览 ================= */
+  #preview {
+    position: fixed; inset: 0; z-index: 60; display: none;
+    overflow-y: auto;
+    padding: calc(60px + env(safe-area-inset-top)) 7vw calc(60px + env(safe-area-inset-bottom));
+    text-align: center;
+  }
+  #preview.open { display: block; }
+  body.previewing #content, body.previewing #sidebar, body.previewing #menuBtn { visibility: hidden; }
+  #previewClose {
+    position: fixed; top: calc(12px + env(safe-area-inset-top)); right: 16px; z-index: 61;
+    width: 42px; height: 42px; border-radius: 50%;
+    background: rgba(15,15,26,0.6); border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.85); font-size: 17px;
+  }
+  #preview h2 { font-size: clamp(24px, 6vw, 34px); font-weight: 500; letter-spacing: 12px; text-indent: 12px; margin-bottom: 8px; }
+  #preview .p-date { font-size: 12px; letter-spacing: 3px; color: rgba(255,255,255,0.4); margin-bottom: 5vh; }
+  #preview .line {
+    font-size: clamp(16px, 4.2vw, 20px); font-weight: 300;
+    line-height: 2.25; letter-spacing: 2px;
+    opacity: 0; transform: translateY(12px);
+    animation: rise 1s ease forwards;
+  }
+  #preview .gap { height: 1.3em; }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  /* ================= 诗库页 ================= */
+  #filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  #search {
+    width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 12px 14px; color: inherit; font-family: inherit; font-size: 16px;
+    outline: none; margin-bottom: 14px;
+  }
+  .p-item {
+    position: relative; padding: 15px 84px 15px 16px; border-radius: 14px; cursor: pointer;
+    background: rgba(15,15,28,0.45); border: 1px solid rgba(255,255,255,0.07);
+    margin-bottom: 10px; transition: background 0.25s;
+  }
+  .p-item:hover { background: rgba(255,255,255,0.07); }
+  .p-item .pi-title { font-size: 15.5px; letter-spacing: 1.5px; }
+  .p-item .pi-meta { font-size: 11.5px; color: rgba(255,255,255,0.42); margin-top: 4px; letter-spacing: 1px; }
+  .pi-status { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+  .pi-status.pub { background: #7ec98a; }
+  .pi-status.draft { background: rgba(255,255,255,0.3); }
+  .pi-ops { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; gap: 2px; }
+  .pi-ops button {
+    background: none; border: none; color: rgba(255,255,255,0.4);
+    font-size: 13px; padding: 10px 8px;
+  }
+  .pi-ops button:active, .pi-ops button:hover { color: #fff; }
+  /* ================= 成集 / 设置 ================= */
+  .m-input {
+    width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px; padding: 12px 14px; color: inherit; font-family: inherit; font-size: 16px;
+    outline: none; margin-bottom: 14px;
+  }
+  .card p { font-size: 13.5px; line-height: 2; color: rgba(255,255,255,0.65); letter-spacing: 1px; }
+  #pubMsg, #setMsg { font-size: 12.5px; margin-top: 10px; color: rgba(255,255,255,0.55); line-height: 1.8; }
+  input[type="file"] { display: none; }
+  /* 成品陈列 */
+  .g-label { font-size: 11px; letter-spacing: 4px; color: rgba(255,255,255,0.42); margin: 26px 0 14px; }
+  #galleryGrid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px;
+  }
+  .g-card {
+    position: relative; border-radius: 16px; overflow: hidden; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.12);
+    min-height: 150px; padding: 18px 16px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .g-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.45); }
+  .g-card::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.45), transparent 60%);
+    pointer-events: none;
+  }
+  .g-card > * { position: relative; z-index: 1; }
+  .g-card .g-excerpt {
+    font-size: 12px; line-height: 1.9; letter-spacing: 1px;
+    color: rgba(255,255,255,0.6); margin-bottom: 10px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .g-card .g-title { font-size: 16.5px; letter-spacing: 3px; font-weight: 500; }
+  .g-card .g-meta { font-size: 11px; letter-spacing: 1.5px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+  /* ================= 手机适配（iPhone 15 Pro 393pt 及以下） ================= */
+  @media (max-width: 760px) {
+    #sidebar { transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.2,0.8,0.2,1); width: min(76vw, 300px); }
+    #sidebar.open { transform: translateX(0); }
+    #sideMask.show { display: block; }
+    #menuBtn { display: block; }
+    #content { margin-left: 0; padding: calc(64px + env(safe-area-inset-top)) 18px calc(46px + env(safe-area-inset-bottom)); }
+    #paper { padding: 24px 18px 30px; }
+    #bodyInput { min-height: 42dvh; }
+    .page-title { margin-top: 2px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-layer" id="bgA"></div>
+<div class="bg-layer" id="bgB"></div>
+<canvas id="particles"></canvas>
+<div class="vignette"></div>
+
+<button id="menuBtn" aria-label="菜单">☰</button>
+<div id="sideMask"></div>
+
+<nav id="sidebar">
+  <div class="brand">梦蝶诗笺<small>朝花夕拾 · 创作工作台</small></div>
+  <button class="nav-item active" data-page="home"><span class="ico">✦</span>灵感角</button>
+  <button class="nav-item" data-page="write"><span class="ico">✎</span>写作</button>
+  <button class="nav-item" data-page="library"><span class="ico">▤</span>诗库</button>
+  <button class="nav-item" data-page="publish"><span class="ico">❧</span>成集</button>
+  <button class="nav-item" data-page="settings"><span class="ico">⚙</span>设置</button>
+  <div class="side-foot">写给梦蝶<br>愿每个字都被月光收留<br><span id="syncBadge" style="display:inline-block;margin-top:8px"></span></div>
+</nav>
+
+<div id="content">
+
+  <!-- 灵感角 -->
+  <section class="page active" id="page-home">
+    <div class="page-title">灵 感 角</div>
+    <div class="page-sub">写不下去时，来这里坐坐</div>
+    <div class="card">
+      <div class="c-label">每 日 一 句</div>
+      <div id="dailyText"></div>
+      <div id="dailyAuthor"></div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="c-label">诗 意 句 子 · 点 ♡ 收 进 收 集 本</div>
+      <div id="sentDeck"></div>
+      <div class="row" style="margin-bottom:0">
+        <button class="btn" id="moreBtn">↻ 换一批</button>
+        <button class="btn" id="aiSentBtn">✧ AI 写几句新的</button>
+      </div>
+      <div id="aiMsg" style="margin:10px 0 0"></div>
+    </div>
+    <div class="card">
+      <div class="c-label">意 象 收 集 本</div>
+      <textarea id="notesInput" placeholder="随手记下想到的句子、词、画面……"></textarea>
+      <div class="row" style="margin:12px 0 0">
+        <button class="btn" id="assocBtn">✧ 意象联想（基于当前草稿）</button>
+      </div>
+      <div id="assocResults"></div>
+      <div id="sparkMsg2" style="margin:10px 0 0"></div>
+    </div>
+  </section>
+
+  <!-- 写作 -->
+  <section class="page" id="page-write">
+    <div class="page-title">写 作</div>
+    <div class="page-sub">草稿写在纸上，发表后归入诗集</div>
+    <div id="paper">
+      <input id="titleInput" type="text" placeholder="诗 题">
+      <input id="dateInput" type="text" placeholder="日期">
+      <div class="paper-rule"></div>
+      <textarea id="bodyInput" placeholder="此处落笔，便是诗的开始……&#10;（空行即分节）" spellcheck="false"></textarea>
+    </div>
+    <div id="writeMeta">
+      <span id="saveState"></span>
+      <span id="lineCount"></span>
+    </div>
+    <div id="themeRow"></div>
+    <div class="row">
+      <button class="btn primary" id="previewBtn">预 览</button>
+      <button class="btn" id="statusBtn">发 表</button>
+      <button class="btn warn" id="delBtn">删除</button>
+    </div>
+  </section>
+
+  <!-- 诗库 -->
+  <section class="page" id="page-library">
+    <div class="page-title">诗 库</div>
+    <div class="page-sub" id="libCount"></div>
+    <input id="search" type="text" placeholder="搜索标题或诗句…">
+    <div id="filters">
+      <button class="chip active" data-f="all">全部</button>
+      <button class="chip" data-f="draft">草稿</button>
+      <button class="chip" data-f="pub">已发表</button>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="newBtn">✎ 新写一首</button>
+      <button class="btn" id="expBtn">备份导出</button>
+      <button class="btn" id="impBtn">导入备份</button>
+      <input type="file" id="impFile" accept=".json">
+    </div>
+    <div id="poemList"></div>
+  </section>
+
+  <!-- 成集 -->
+  <section class="page" id="page-publish">
+    <div class="page-title">成 集</div>
+    <div class="page-sub">把已发表的诗，放进诗集网页</div>
+    <div class="card">
+      <p id="pubInfo"></p>
+      <p>选择现有的诗集网页文件（poems.html），会生成放入新诗后的新版供下载保存，旧文件不受影响。工作台与诗集共用同一套氛围主题，逐一对应。</p>
+      <div class="row" style="margin-bottom:0">
+        <button class="btn primary" id="pubPick">选择 poems.html 并生成</button>
+      </div>
+      <input type="file" id="pubFile" accept=".html,text/html">
+      <div id="pubMsg"></div>
+    </div>
+    <div class="g-label">成 品 预 览 · 点 开 即 见 诗 与 背 景</div>
+    <div id="galleryGrid"></div>
+  </section>
+
+  <!-- 设置 -->
+  <section class="page" id="page-settings">
+    <div class="page-title">设 置</div>
+    <div class="page-sub">可选项，不填也不影响写作</div>
+    <div class="card">
+      <p>「AI 写几句新的」和「意象联想」需要 Anthropic API 密钥（sk-ant- 开头）。密钥只保存在这台设备的浏览器里。</p>
+      <input class="m-input" type="password" id="keyInput" placeholder="sk-ant-…">
+      <div class="row" style="margin-bottom:0">
+        <button class="btn primary" id="setSave">保存密钥</button>
+      </div>
+      <div id="setMsg"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- 预览 -->
+<div id="preview">
+  <button id="previewClose">✕</button>
+  <h2 id="pvTitle"></h2>
+  <div class="p-date" id="pvDate"></div>
+  <div id="pvBody"></div>
+</div>
+
+<script>
+/* ================= 数据 ================= */
+const THEMES = { night:"黑夜", queen:"女王", lamps:"灯火", phoenix:"涅槃", moon:"月色", stars:"星辰", inkmist:"水墨", meadow:"绿野" };
+const KEYWORDS = {
+  moon: ["月","桂","婵娟"],
+  stars: ["星","银河","流星","宇宙","星辰"],
+  lamps: ["灯","烛","灯火"],
+  phoenix: ["涅槃","灰烬","燃","焚","愤怒","重生","火"],
+  queen: ["女王","伤痕","加冕","勋章","王冠","疮痍"],
+  inkmist: ["忧伤","水墨","颜色","紫","浅蓝","雾","氤氲"],
+  meadow: ["绿","花","云","风","草","野","琥珀"],
+  night: ["夜","酒","沉醉","黑","牢","流放"],
+  cover: ["蝶","蝴蝶"]
+};
+const DAILY = [
+["人生若只如初见","纳兰性德"],["山有木兮木有枝，心悦君兮君不知","《越人歌》"],["曾经沧海难为水，除却巫山不是云","元稹"],
+["此情可待成追忆，只是当时已惘然","李商隐"],["身无彩凤双飞翼，心有灵犀一点通","李商隐"],["春蚕到死丝方尽，蜡炬成灰泪始干","李商隐"],
+["何当共剪西窗烛，却话巴山夜雨时","李商隐"],["庄生晓梦迷蝴蝶，望帝春心托杜鹃","李商隐"],["沧海月明珠有泪，蓝田日暖玉生烟","李商隐"],
+["众里寻他千百度，蓦然回首，那人却在灯火阑珊处","辛弃疾"],["明月几时有，把酒问青天","苏轼"],["人有悲欢离合，月有阴晴圆缺","苏轼"],
+["回首向来萧瑟处，归去，也无风雨也无晴","苏轼"],["竹杖芒鞋轻胜马，谁怕？一蓑烟雨任平生","苏轼"],["人间有味是清欢","苏轼"],
+["此心安处是吾乡","苏轼"],["花自飘零水自流，一种相思，两处闲愁","李清照"],["帘卷西风，人比黄花瘦","李清照"],
+["云中谁寄锦书来，雁字回时，月满西楼","李清照"],["天涯地角有穷时，只有相思无尽处","晏殊"],["昨夜西风凋碧树，独上高楼，望尽天涯路","晏殊"],
+["落花人独立，微雨燕双飞","晏几道"],["今宵剩把银釭照，犹恐相逢是梦中","晏几道"],["衣带渐宽终不悔，为伊消得人憔悴","柳永"],
+["今宵酒醒何处？杨柳岸，晓风残月","柳永"],["人生自是有情痴，此恨不关风与月","欧阳修"],["月上柳梢头，人约黄昏后","欧阳修"],
+["平芜尽处是春山，行人更在春山外","欧阳修"],["春风又绿江南岸，明月何时照我还","王安石"],["疏影横斜水清浅，暗香浮动月黄昏","林逋"],
+["玲珑骰子安红豆，入骨相思知不知","温庭筠"],["过尽千帆皆不是，斜晖脉脉水悠悠","温庭筠"],["春花秋月何时了，往事知多少","李煜"],
+["问君能有几多愁，恰似一江春水向东流","李煜"],["流水落花春去也，天上人间","李煜"],["醉后不知天在水，满船清梦压星河","唐温如"],
+["我有一瓢酒，可以慰风尘","韦应物"],["春潮带雨晚来急，野渡无人舟自横","韦应物"],["行到水穷处，坐看云起时","王维"],
+["明月松间照，清泉石上流","王维"],["大漠孤烟直，长河落日圆","王维"],["愿君多采撷，此物最相思","王维"],
+["海上生明月，天涯共此时","张九龄"],["露从今夜白，月是故乡明","杜甫"],["星垂平野阔，月涌大江流","杜甫"],
+["会当凌绝顶，一览众山小","杜甫"],["长风破浪会有时，直挂云帆济沧海","李白"],["举杯邀明月，对影成三人","李白"],
+["我寄愁心与明月，随君直到夜郎西","李白"],["人生得意须尽欢，莫使金樽空对月","李白"],["天生我材必有用，千金散尽还复来","李白"],
+["相看两不厌，只有敬亭山","李白"],["曲终人不见，江上数峰青","钱起"],["落霞与孤鹜齐飞，秋水共长天一色","王勃"],
+["海内存知己，天涯若比邻","王勃"],["春江潮水连海平，海上明月共潮生","张若虚"],["人生代代无穷已，江月年年望相似","张若虚"],
+["不知乘月几人归，落月摇情满江树","张若虚"],["采菊东篱下，悠然见南山","陶渊明"],["久在樊笼里，复得返自然","陶渊明"],
+["山气日夕佳，飞鸟相与还","陶渊明"],["生如夏花之绚烂，死如秋叶之静美","泰戈尔"],["世界以痛吻我，要我报之以歌","泰戈尔"]
+];
+const WEBLIB = [
+"把晚风存进口袋，难过的时候拿出来吹一吹",
+"月亮今晚不营业，我替它亮着",
+"云把天空写满了草稿，风一页页翻",
+"我把心事晒在阳台上，被夕阳收走了",
+"星星是夜空打的草稿，最亮那颗是你",
+"风路过的时候，替我抱了抱那棵树",
+"日落把今天的委屈，都染成了温柔的颜色",
+"雨下进湖里，湖就有了心事",
+"春天把信写在花瓣上，一拆就散了",
+"夜里想不通的事，交给清晨的第一缕光",
+"我在人间收集光，一点点，也够照亮自己",
+"把名字写在风里，风到哪儿，我就被想起到哪儿",
+"生活偶尔苦，但晚霞每天都免费",
+"灯一盏盏灭了，月亮还在替人间值班",
+"心里的海退潮了，捡到一枚叫勇气的贝壳",
+"雪落下来的时候，连时间都放轻了脚步",
+"秋天把叶子都寄出去了，一封封，全是告别",
+"我把梦折成小船，夜每晚替我摆渡",
+"山不说话，却把所有云都留下来过夜",
+"蝴蝶停在花上，像世界按了一次暂停",
+"桂花开的时候，整条街都在替它写诗",
+"天黑得很温柔，像给白天的伤口盖了层纱布",
+"想你的时候，连影子都往你那边斜",
+"河水一路向前，从不回头，却带走了整片星空",
+"把眼泪留给洋葱，把笑留给自己",
+"雾散之后，山还是山，我还是我，但都清晰了一点",
+"今晚的月亮很圆，适合原谅一些人，包括自己",
+"时间是温柔的裁缝，把裂缝缝成了花纹",
+"蒲公英把家安在风里，落地就是故乡",
+"黄昏是白昼写给黑夜的情书",
+"我种下的每一个字，都会在某个春天发芽",
+"潮水退去的地方，沙滩替海记住了形状",
+"萤火虫提着灯笼，在夜里找丢失的夏天",
+"悲伤是会结痂的，痂掉了就成了铠甲",
+"慢一点也没关系，月亮走了一夜才到天亮",
+"世界很吵，幸好诗很安静"
+];
+const SEED = [
+  { title:"女王", date:"2026.07.18", theme:"queen", status:"pub", lines:["我，还有委屈，","还有普通人的七情六欲，","大约再修两百年也无法修成","你们期待的样子。","于是最终决定","不再执着于成为","你们心目中完美的","幻影","","当我","开始接纳真实的，甚至有点丑陋的自己","不再因执着于梦幻泡影","而被拿捏、被折磨","变得身不由己、面目全非","","当我开始珍爱自己","哪怕从里到外都已满目疮痍","那些无法轻易遮盖的惨烈伤痕","是生命授予的勋章","伤痕累累却美得耀眼","不再需要世界的评价与认可","因为我","是自己的女王","将用灵魂为自己的身体","加冕"] },
+  { title:"灯", date:"2026.07.18", theme:"lamps", status:"pub", lines:["一盏一盏被熄灭","快到终审的日子了","心","逐渐变得平静","除了顺从与接纳","别无选择","没有波澜","不再期待那个最后的答案","等待他们","撕下虚伪的画皮","在月光下显露原形","谁的心里没有住过魔鬼呢","也许","一切皆可原谅"] },
+  { title:"涅槃", date:"2026.07.19", theme:"phoenix", status:"pub", lines:["谁也看不出","昨晚 在这个房间","发生过一场谋杀","一切都完好如初","不露痕迹","昨夜的我已经在愤怒中死去","用诗歌把流血的伤口缝合","用别人的伤痕疗愈自己的伤痕","完成了又一场涅槃"] },
+  { title:"今夜", date:"2026.07.09", theme:"night", status:"pub", lines:["想要打破世界的束缚","任性地沉醉","栀子花的香气粘不住","这破碎的灵魂","黑夜","像一只巨大的酒杯","却接不住","弥漫成河的悲伤","注定走不出这牢门","因为心","早已被流放"] },
+  { title:"月色", date:"2026.07.09", theme:"moon", status:"pub", lines:["是谁，在深夜徘徊彷徨","月光清冽","心事一览无余","如果月圆之夜","真的能打开","通往另一个世界的大门","期待你来把我带走","","清晨","在梦中与你谈笑如常","执手缠绵","仿佛未来有一生那么长","直到猝不及防地醒来","再也找不到","魂牵梦萦的桃花源","","如果梦","是另一个平行宇宙","祈祷上天指引我找到入口","继续演绎一场有预谋的","风花雪月","虽然结局早已写好","可世间男女","有谁能抗拒这份危险的美丽"] },
+  { title:"星辰", date:"2021.02", theme:"stars", status:"pub", lines:["没有你的日子","阳光再暖 也","晒不化","心底的寒冰","昨夜","梦中的你","眼中星光闪烁","笑容 一如既往","温暖又美丽","仿佛触手可及","却","转瞬即逝","","不愿醒来","期待","在下一个梦境与你","相遇","这样 是不是","你就会","永远","陪在我","身边","","如果把梦拉得更长一些","是不是 就可以","把这刹那的","温柔","定格得","更久一些","","深夜的星空","寂静浩渺","一切缄默不语","漫天星辰","努力撕开黑夜的","凝重","月白色的光芒","温暖而美丽","似曾相识","宛若你","深情凝视的","目光"] },
+  { title:"这忧伤，与生俱来", date:"2026.07.07", theme:"inkmist", status:"pub", lines:["熟悉又陌生，美丽又痛苦","有时是浅蓝色，有时是浅紫色","有时又是浓浓的绿抑或深深的紫","有时是一丝一丝的","有时又是大朵大朵的","有时浓得像被水墨氤氲的画","有时轻得像天边游走的浮云","喜欢这沉醉的感觉","让一切蒙上诗意的颜色","苦涩中映照出美丽","无法言传的美","是灵魂吟唱的歌声","等待一个被破译的频率"] },
+  { title:"心事", date:"2026.07.07", theme:"meadow", status:"pub", lines:["无人在意","那绿野丛中的一抹深蓝","他已沉默地等待多年","期待一朵白云再次留下","惊鸿一瞥","","多年后","依然无法忘记那一刻","灵魂的悸动","他终于读懂了","她的美丽心事","沉寂许久的心","泛起涟漪","第一次感觉自惭形秽","尚未来得及积攒足够的勇气","她已被晚风催促着","黯然离去","","从此","思念像被时光凝成的琥珀","日日映照","他的惆怅与期待","不知道下一场相遇","会在何时","于是日日祈求路过的晚风","带去他的思念","告知她","他的心里装着一整片天空","从此，她再也不必","在风中流浪"] }
+];
+/* ===== 云同步配置（部署时填入，留空则只存本机）===== */
+/*CLOUD_START*/
+const CLOUD = {
+  url: "https://cuvglzufscjqrxchhdyp.supabase.co",
+  key: "sb_publishable_Ito6WzgaoSsAetAvzzkrIw_s1Tu10bJ"
+};
+/*CLOUD_END*/
+const CLOUD_ID = "main";
+
+const STORE_KEY = "mengdie_shijian_v2";
+const OLD_KEY = "mengdie_workbench_v1";
+let store;
+function loadStore() {
+  try { store = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) { store = null; }
+  if (!store || !Array.isArray(store.poems)) {
+    let old = null;
+    try { old = JSON.parse(localStorage.getItem(OLD_KEY)); } catch (e) {}
+    if (old && Array.isArray(old.poems) && old.poems.length) {
+      store = { poems: old.poems, notes: old.notes || "", apiKey: old.apiKey || "", favs: [] };
+    } else {
+      store = { poems: SEED.map((p, i) => ({ id: "seed" + i, ...p })), notes: "", apiKey: "", favs: [] };
+    }
+    saveStore();
+  }
+  if (!Array.isArray(store.favs)) store.favs = [];
+}
+function saveStore() {
+  store.updatedAt = Date.now();
+  localStorage.setItem(STORE_KEY, JSON.stringify(store));
+  scheduleCloudPush();
+}
+
+/* ===== 云同步 ===== */
+const syncBadge = () => document.getElementById("syncBadge");
+function setSync(txt, dim) {
+  const b = syncBadge();
+  if (b) { b.textContent = txt; b.style.color = dim ? "rgba(255,255,255,0.3)" : "rgba(150,200,160,0.8)"; }
+}
+const cloudOn = () => CLOUD.url && CLOUD.key;
+function cloudHeaders() {
+  return { "apikey": CLOUD.key, "Authorization": "Bearer " + CLOUD.key, "Content-Type": "application/json" };
+}
+function cloudData() {
+  const d = JSON.parse(JSON.stringify(store));
+  delete d.apiKey; // 密钥永不上云
+  return d;
+}
+async function cloudPull() {
+  const r = await fetch(CLOUD.url + "/rest/v1/mengdie_store?id=eq." + CLOUD_ID + "&select=data,updated_at", { headers: cloudHeaders() });
+  if (!r.ok) throw new Error("pull " + r.status);
+  const rows = await r.json();
+  return rows[0] || null;
+}
+async function cloudPush() {
+  const r = await fetch(CLOUD.url + "/rest/v1/mengdie_store", {
+    method: "POST",
+    headers: { ...cloudHeaders(), "Prefer": "resolution=merge-duplicates" },
+    body: JSON.stringify([{ id: CLOUD_ID, data: cloudData(), updated_at: store.updatedAt || 0 }])
+  });
+  if (!r.ok) throw new Error("push " + r.status);
+}
+let pushTimer = null, pushPending = false;
+function scheduleCloudPush() {
+  if (!cloudOn()) return;
+  pushPending = true;
+  setSync("… 同步中", true);
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(async () => {
+    try {
+      await cloudPush();
+      pushPending = false;
+      setSync("✓ 已同步云端");
+    } catch (e) {
+      setSync("⚠ 待同步（离线时本机已保存）", true);
+    }
+  }, 1500);
+}
+window.addEventListener("online", () => { if (pushPending) scheduleCloudPush(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && pushPending) scheduleCloudPush();
+});
+async function initCloud() {
+  if (!cloudOn()) { setSync("云同步未开启 · 仅本机保存", true); return; }
+  setSync("… 正在连接云端", true);
+  try {
+    const remote = await cloudPull();
+    if (remote && remote.data && remote.updated_at > (store.updatedAt || 0)) {
+      const localKey = store.apiKey;
+      store = remote.data;
+      if (!Array.isArray(store.favs)) store.favs = [];
+      if (localKey && !store.apiKey) store.apiKey = localKey;
+      localStorage.setItem(STORE_KEY, JSON.stringify(store));
+      notesInput.value = store.notes || "";
+      document.getElementById("keyInput").value = store.apiKey || "";
+      if (store.poems.length) loadPoem(store.poems[0].id);
+      renderList();
+    } else {
+      await cloudPush();
+    }
+    setSync("✓ 已同步云端");
+  } catch (e) {
+    setSync("⚠ 云端连接失败 · 本机保存正常", true);
+  }
+}
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+/* ================= 背景与粒子（与诗集网站一致） ================= */
+const gradients = {
+  cover:   "radial-gradient(ellipse at 50% 18%, rgba(150,130,220,0.2) 0%, transparent 50%), linear-gradient(170deg, #0a0918 0%, #17123a 50%, #261a4e 82%, #1a1030 100%)",
+  night:   "linear-gradient(170deg, #06060f 0%, #12102b 40%, #241035 70%, #3a0d22 100%)",
+  queen:   "radial-gradient(ellipse at 50% -10%, rgba(212,164,74,0.22) 0%, transparent 45%), linear-gradient(165deg, #120a10 0%, #241016 45%, #2e130f 80%, #1a0b08 100%)",
+  lamps:   "radial-gradient(ellipse at 82% 12%, rgba(190,205,235,0.14) 0%, transparent 38%), linear-gradient(175deg, #04070e 0%, #0b1220 55%, #101625 100%)",
+  phoenix: "linear-gradient(170deg, #0a0a0d 0%, #170e0b 45%, #241108 78%, #301507 100%)",
+  moon:    "radial-gradient(circle at 74% 20%, rgba(222,228,248,0.2) 0%, transparent 32%), linear-gradient(170deg, #090c1a 0%, #121a34 50%, #1b2342 100%)",
+  stars:   "linear-gradient(180deg, #04060f 0%, #0a0e24 55%, #111536 100%)",
+  inkmist: "linear-gradient(170deg, #0b0d15 0%, #131629 45%, #101b26 78%, #151228 100%)",
+  meadow:  "radial-gradient(ellipse at 28% 88%, rgba(58,128,88,0.28) 0%, transparent 55%), linear-gradient(175deg, #060c0a 0%, #0c1a12 55%, #12241a 100%)"
+};
+const bgA = document.getElementById("bgA"), bgB = document.getElementById("bgB");
+let activeBg = bgA;
+function setBackground(theme) {
+  const incoming = activeBg === bgA ? bgB : bgA;
+  incoming.style.background = gradients[theme];
+  incoming.classList.add("visible");
+  activeBg.classList.remove("visible");
+  activeBg = incoming;
+}
+const canvas = document.getElementById("particles");
+const ctx = canvas.getContext("2d");
+let W, H, particles = [], extras = {}, currentTheme = null, canvasAlpha = 0, targetAlpha = 1;
+function resize() {
+  W = canvas.width = window.innerWidth * devicePixelRatio;
+  H = canvas.height = window.innerHeight * devicePixelRatio;
+  canvas.style.width = window.innerWidth + "px";
+  canvas.style.height = window.innerHeight + "px";
+}
+window.addEventListener("resize", () => { resize(); initParticles(currentTheme); });
+resize();
+const rand = (a, b) => a + Math.random() * (b - a);
+const butterflyColors = ["#b9a7e8", "#e8d4a0", "#d8a8c8", "#cfd6f2", "#a89ae0"];
+function initParticles(theme) {
+  particles = []; extras = {};
+  const s = devicePixelRatio;
+  if (theme === "cover") {
+    for (let i = 0; i < 9; i++) particles.push({ kind:"b", x:rand(0,W), y:rand(0.1,0.9)*H, ang:rand(0,Math.PI*2), speed:rand(0.3,0.9)*s, flap:rand(0,Math.PI*2), flapSpeed:rand(0.12,0.22), size:rand(7,18)*s, seed:rand(0,10), color:butterflyColors[i%butterflyColors.length], o:rand(0.5,0.95) });
+    for (let i = 0; i < 45; i++) particles.push({ kind:"d", x:rand(0,W), y:rand(0,H), r:rand(0.6,1.8)*s, vy:-rand(0.02,0.12)*s, tw:rand(0,Math.PI*2), twSpeed:rand(0.008,0.03), o:rand(0.2,0.7) });
+  } else if (theme === "night") {
+    for (let i = 0; i < 26; i++) particles.push({ x:rand(0,W), y:rand(0,H), r:rand(2.2,4.5)*s, vy:rand(0.15,0.45)*s, phase:rand(0,Math.PI*2), sway:rand(0.3,0.9)*s, o:rand(0.25,0.65), rot:rand(0,Math.PI) });
+  } else if (theme === "queen") {
+    for (let i = 0; i < 70; i++) particles.push({ x:rand(0,W), y:rand(0,H), r:rand(0.7,2.2)*s, vy:-rand(0.05,0.25)*s, tw:rand(0,Math.PI*2), twSpeed:rand(0.01,0.04), o:rand(0.3,0.9) });
+  } else if (theme === "lamps") {
+    for (let i = 0; i < 11; i++) particles.push({ x:rand(0.06,0.94)*W, y:rand(0.12,0.68)*H, r:rand(2.5,5)*s, glow:rand(26,55)*s, b:rand(0.5,1), state:"on", timer:rand(200,900), flick:rand(0,Math.PI*2) });
+  } else if (theme === "phoenix") {
+    for (let i = 0; i < 55; i++) particles.push(newEmber(true));
+  } else if (theme === "moon") {
+    for (let i = 0; i < 6; i++) particles.push({ kind:"c", x:rand(0,W), y:rand(0.08,0.55)*H, w:rand(0.2,0.42)*W, h:rand(30,70)*s, vx:rand(0.06,0.22)*s, o:rand(0.04,0.1) });
+    for (let i = 0; i < 30; i++) particles.push({ kind:"d", x:rand(0,W), y:rand(0,H), r:rand(0.6,1.6)*s, vy:-rand(0.02,0.1)*s, tw:rand(0,Math.PI*2), twSpeed:rand(0.008,0.025), o:rand(0.2,0.6) });
+  } else if (theme === "stars") {
+    for (let i = 0; i < 130; i++) particles.push({ x:rand(0,W), y:rand(0,H*0.92), r:rand(0.5,1.9)*s, tw:rand(0,Math.PI*2), twSpeed:rand(0.01,0.05), o:rand(0.3,1) });
+    extras.meteor = { active:false, timer:rand(200,500) };
+  } else if (theme === "inkmist") {
+    const inks = ["110,150,220","150,120,215","90,170,140","120,90,185"];
+    for (let i = 0; i < 7; i++) particles.push({ x:rand(0,W), y:rand(0.15,0.85)*H, r:rand(0.13,0.3)*Math.min(W,H)*1.6, vx:rand(-0.08,0.08)*s, vy:rand(-0.05,0.05)*s, pulse:rand(0,Math.PI*2), pulseSpeed:rand(0.002,0.006), color:inks[i%inks.length], o:rand(0.05,0.12) });
+  } else if (theme === "meadow") {
+    for (let i = 0; i < 32; i++) particles.push({ kind:"seed", x:rand(0,W), y:rand(0,H), r:rand(0.8,2)*s, vx:rand(0.1,0.4)*s, vy:-rand(0.05,0.25)*s, phase:rand(0,Math.PI*2), o:rand(0.25,0.7) });
+    particles.push({ kind:"c", x:rand(0.1,0.5)*W, y:rand(0.1,0.22)*H, w:0.3*W, h:45*s, vx:0.1*s, o:0.09 });
+    extras.flower = { x:0.28*W, y:0.86*H, pulse:0 };
+  }
+}
+function newEmber(scatter) {
+  const s = devicePixelRatio;
+  return { x:rand(0,W), y:scatter?rand(0,H):H+10, r:rand(0.8,2.6)*s, vy:-rand(0.25,0.9)*s, vx:rand(-0.15,0.15)*s, tw:rand(0,Math.PI*2), o:rand(0.4,0.95) };
+}
+function drawCloud(p) {
+  const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.w/2);
+  g.addColorStop(0, `rgba(210,218,240,${p.o})`);
+  g.addColorStop(1, "rgba(210,218,240,0)");
+  ctx.globalAlpha = canvasAlpha;
+  ctx.fillStyle = g;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.scale(1, p.h/(p.w/2));
+  ctx.beginPath(); ctx.arc(0, 0, p.w/2, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function draw() {
+  canvasAlpha += (targetAlpha - canvasAlpha) * 0.06;
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, canvasAlpha);
+  const t = performance.now()/1000;
+  const s = devicePixelRatio;
+  if (currentTheme === "cover") {
+    for (const p of particles) {
+      if (p.kind === "d") {
+        p.y += p.vy; p.tw += p.twSpeed;
+        if (p.y < -10) { p.y = H+10; p.x = rand(0,W); }
+        ctx.globalAlpha = canvasAlpha * p.o * (0.3 + 0.7*Math.abs(Math.sin(p.tw)));
+        ctx.fillStyle = "#cfc8f0";
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+        continue;
+      }
+      p.flap += p.flapSpeed;
+      p.ang += Math.sin(t*0.6 + p.seed) * 0.018;
+      p.x += Math.cos(p.ang) * p.speed;
+      p.y += Math.sin(p.ang) * p.speed * 0.7 + Math.sin(p.flap*0.5) * 0.2 * s;
+      const m = 40*s;
+      if (p.x < -m) p.x = W+m; if (p.x > W+m) p.x = -m;
+      if (p.y < -m) p.y = H+m; if (p.y > H+m) p.y = -m;
+      const flapW = 0.3 + 0.7*Math.abs(Math.sin(p.flap));
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.ang + Math.PI/2);
+      ctx.globalAlpha = canvasAlpha * p.o;
+      ctx.shadowColor = p.color; ctx.shadowBlur = 10*s;
+      ctx.fillStyle = p.color;
+      for (const side of [-1, 1]) {
+        ctx.save();
+        ctx.scale(side*flapW, 1);
+        ctx.beginPath(); ctx.ellipse(p.size*0.55, -p.size*0.22, p.size*0.55, p.size*0.38, -0.45, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(p.size*0.38, p.size*0.32, p.size*0.36, p.size*0.27, 0.5, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(250,248,255,0.85)";
+      ctx.beginPath(); ctx.ellipse(0, 0, p.size*0.08, p.size*0.42, 0, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  } else if (currentTheme === "night") {
+    for (const p of particles) {
+      p.y += p.vy; p.phase += 0.012;
+      p.x += Math.sin(p.phase) * p.sway * 0.3;
+      if (p.y > H+10) { p.y = -10; p.x = rand(0,W); }
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot + Math.sin(p.phase)*0.5);
+      ctx.globalAlpha = canvasAlpha * p.o;
+      ctx.fillStyle = "#f5efdf";
+      ctx.beginPath(); ctx.ellipse(0, 0, p.r, p.r*0.55, 0, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  } else if (currentTheme === "queen") {
+    for (const p of particles) {
+      p.y += p.vy; p.tw += p.twSpeed;
+      if (p.y < -10) { p.y = H+10; p.x = rand(0,W); }
+      ctx.globalAlpha = canvasAlpha * p.o * (0.35 + 0.65*Math.abs(Math.sin(p.tw)));
+      ctx.fillStyle = "#e8c56d";
+      ctx.shadowColor = "#d4a44a"; ctx.shadowBlur = 6*s;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  } else if (currentTheme === "lamps") {
+    for (const p of particles) {
+      p.flick += 0.05; p.timer--;
+      if (p.timer <= 0) {
+        if (p.state === "on") { p.state = "dying"; }
+        else if (p.state === "off") { p.state = "waking"; }
+      }
+      if (p.state === "dying") { p.b -= 0.008; if (p.b <= 0.02) { p.b = 0.02; p.state = "off"; p.timer = rand(300,800); } }
+      if (p.state === "waking") { p.b += 0.004; if (p.b >= rand(0.6,1)) { p.state = "on"; p.timer = rand(500,1400); } }
+      const b = p.b * (0.85 + 0.15*Math.sin(p.flick*2.3));
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.glow);
+      g.addColorStop(0, `rgba(255,186,110,${0.5*b})`);
+      g.addColorStop(1, "rgba(255,186,110,0)");
+      ctx.globalAlpha = canvasAlpha;
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.glow, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = `rgba(255,214,160,${b})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r*(0.7+0.3*b), 0, Math.PI*2); ctx.fill();
+    }
+  } else if (currentTheme === "phoenix") {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.y += p.vy; p.x += p.vx + Math.sin(t*2 + p.tw)*0.15*s;
+      p.tw += 0.06;
+      if (p.y < -10) particles[i] = newEmber(false);
+      const heightFade = Math.min(1, p.y/(H*0.35));
+      const a = p.o * heightFade * (0.6 + 0.4*Math.sin(p.tw));
+      ctx.globalAlpha = canvasAlpha * Math.max(0, a);
+      ctx.fillStyle = Math.sin(p.tw) > 0.3 ? "#ffb35c" : "#e8622e";
+      ctx.shadowColor = "#ff7b33"; ctx.shadowBlur = 5*s;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  } else if (currentTheme === "moon") {
+    const mx = W*0.74, my = H*0.2, mr = Math.min(W,H)*0.055;
+    const halo = ctx.createRadialGradient(mx, my, mr*0.5, mx, my, mr*4);
+    halo.addColorStop(0, "rgba(226,232,252,0.25)");
+    halo.addColorStop(1, "rgba(226,232,252,0)");
+    ctx.globalAlpha = canvasAlpha;
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(mx, my, mr*4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#e9ecf8";
+    ctx.shadowColor = "#dfe5fa"; ctx.shadowBlur = 30*s;
+    ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    for (const p of particles) {
+      if (p.kind === "c") {
+        p.x += p.vx;
+        if (p.x - p.w/2 > W) p.x = -p.w/2;
+        drawCloud(p);
+      } else {
+        p.y += p.vy; p.tw += p.twSpeed;
+        if (p.y < -10) { p.y = H+10; p.x = rand(0,W); }
+        ctx.globalAlpha = canvasAlpha * p.o * (0.3 + 0.7*Math.abs(Math.sin(p.tw)));
+        ctx.fillStyle = "#dfe4f5";
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+      }
+    }
+  } else if (currentTheme === "stars") {
+    for (const p of particles) {
+      p.tw += p.twSpeed;
+      ctx.globalAlpha = canvasAlpha * p.o * (0.25 + 0.75*Math.abs(Math.sin(p.tw)));
+      ctx.fillStyle = "#e8ecfa";
+      ctx.shadowColor = "#c8d2f5"; ctx.shadowBlur = p.r*2.5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    const m = extras.meteor;
+    if (m) {
+      if (!m.active) {
+        m.timer--;
+        if (m.timer <= 0) {
+          m.active = true;
+          m.x = rand(0.2,0.9)*W; m.y = rand(0,0.25)*H;
+          m.vx = -rand(6,9)*s; m.vy = rand(3,5)*s;
+          m.life = 1;
+        }
+      } else {
+        m.x += m.vx; m.y += m.vy; m.life -= 0.02;
+        if (m.life <= 0) { m.active = false; m.timer = rand(400,900); }
+        else {
+          const grad = ctx.createLinearGradient(m.x, m.y, m.x - m.vx*10, m.y - m.vy*10);
+          grad.addColorStop(0, `rgba(240,244,255,${0.8*m.life})`);
+          grad.addColorStop(1, "rgba(240,244,255,0)");
+          ctx.globalAlpha = canvasAlpha;
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.6*s;
+          ctx.beginPath();
+          ctx.moveTo(m.x, m.y);
+          ctx.lineTo(m.x - m.vx*10, m.y - m.vy*10);
+          ctx.stroke();
+        }
+      }
+    }
+  } else if (currentTheme === "inkmist") {
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy; p.pulse += p.pulseSpeed;
+      if (p.x < -p.r) p.x = W+p.r; if (p.x > W+p.r) p.x = -p.r;
+      if (p.y < -p.r) p.y = H+p.r; if (p.y > H+p.r) p.y = -p.r;
+      const r = p.r * (0.85 + 0.15*Math.sin(p.pulse));
+      const a = p.o * (0.7 + 0.3*Math.sin(p.pulse*1.3));
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+      g.addColorStop(0, `rgba(${p.color},${a})`);
+      g.addColorStop(1, `rgba(${p.color},0)`);
+      ctx.globalAlpha = canvasAlpha;
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill();
+    }
+  } else if (currentTheme === "meadow") {
+    const f = extras.flower;
+    if (f) {
+      f.pulse += 0.02;
+      const fr = (26 + 8*Math.sin(f.pulse)) * s;
+      const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, fr*3);
+      g.addColorStop(0, "rgba(70,110,235,0.4)");
+      g.addColorStop(0.4, "rgba(60,95,210,0.15)");
+      g.addColorStop(1, "rgba(60,95,210,0)");
+      ctx.globalAlpha = canvasAlpha;
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(f.x, f.y, fr*3, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "rgba(120,155,255,0.9)";
+      ctx.shadowColor = "#5b7dff"; ctx.shadowBlur = 14*s;
+      ctx.beginPath(); ctx.arc(f.x, f.y, 3.2*s, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    for (const p of particles) {
+      if (p.kind === "c") {
+        p.x += p.vx;
+        if (p.x - p.w/2 > W) p.x = -p.w/2;
+        drawCloud(p);
+        continue;
+      }
+      p.phase += 0.02;
+      p.x += p.vx + Math.sin(p.phase)*0.3*s;
+      p.y += p.vy;
+      if (p.x > W+10) p.x = -10;
+      if (p.y < -10) { p.y = H+10; p.x = rand(0,W); }
+      ctx.globalAlpha = canvasAlpha * p.o * (0.5 + 0.5*Math.abs(Math.sin(p.phase*0.7)));
+      ctx.fillStyle = "#eef2e8";
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.restore();
+  requestAnimationFrame(draw);
+}
+function switchTheme(theme) {
+  if (theme === currentTheme) return;
+  targetAlpha = 0;
+  setBackground(theme);
+  setTimeout(() => {
+    currentTheme = theme;
+    initParticles(theme);
+    targetAlpha = 1;
+  }, 450);
+}
+
+/* ================= 页面切换 ================= */
+const sidebar = document.getElementById("sidebar");
+const sideMask = document.getElementById("sideMask");
+document.getElementById("menuBtn").addEventListener("click", () => {
+  sidebar.classList.toggle("open");
+  sideMask.classList.toggle("show", sidebar.classList.contains("open"));
+});
+sideMask.addEventListener("click", () => { sidebar.classList.remove("open"); sideMask.classList.remove("show"); });
+
+function showPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === "page-" + name));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.page === name));
+  sidebar.classList.remove("open"); sideMask.classList.remove("show");
+  document.getElementById("content").scrollTop = 0;
+  if (name === "write") {
+    const p = currentPoem();
+    switchTheme(p ? p.theme : "night");
+  } else if (name === "home") {
+    switchTheme("cover");
+  } else if (name === "library") {
+    renderList();
+  } else if (name === "publish") {
+    document.getElementById("pubInfo").textContent = "当前有 " + store.poems.filter(p => p.status === "pub").length + " 首已发表的诗将放入诗集。";
+    renderGallery();
+  }
+}
+document.querySelectorAll(".nav-item").forEach(n => n.addEventListener("click", () => showPage(n.dataset.page)));
+
+/* ================= 灵感角 ================= */
+function initDaily() {
+  const idx = Math.floor(Date.now() / 86400000) % DAILY.length;
+  document.getElementById("dailyText").textContent = DAILY[idx][0];
+  document.getElementById("dailyAuthor").textContent = "—— " + DAILY[idx][1];
+}
+let sentBag = [];
+function refillBag() {
+  sentBag = [...WEBLIB.keys()];
+  for (let i = sentBag.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [sentBag[i], sentBag[j]] = [sentBag[j], sentBag[i]];
+  }
+}
+function renderSentences(list) {
+  const deck = document.getElementById("sentDeck");
+  deck.innerHTML = "";
+  for (const text of list) {
+    const card = document.createElement("div");
+    card.className = "sent-card";
+    const faved = store.favs.includes(text);
+    card.innerHTML = '<div class="s-text"></div><button class="s-fav' + (faved ? " faved" : "") + '">' + (faved ? "♥" : "♡") + "</button>";
+    card.querySelector(".s-text").textContent = text;
+    card.querySelector(".s-fav").addEventListener("click", ev => {
+      const btn = ev.currentTarget;
+      if (!store.favs.includes(text)) {
+        store.favs.push(text);
+        store.notes = (store.notes ? store.notes + "\n" : "") + text;
+        document.getElementById("notesInput").value = store.notes;
+        saveStore();
+        btn.textContent = "♥"; btn.classList.add("faved");
+      }
+    });
+    deck.appendChild(card);
+  }
+}
+function nextSentences() {
+  if (sentBag.length < 3) refillBag();
+  const picks = sentBag.splice(0, 3).map(i => WEBLIB[i]);
+  renderSentences(picks);
+}
+document.getElementById("moreBtn").addEventListener("click", nextSentences);
+
+async function callClaude(prompt, maxTokens) {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": store.apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5",
+      max_tokens: maxTokens || 300,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  if (!resp.ok) throw new Error("HTTP " + resp.status);
+  const data = await resp.json();
+  return (data.content && data.content[0] && data.content[0].text) || "";
+}
+document.getElementById("aiSentBtn").addEventListener("click", async () => {
+  const msg = document.getElementById("aiMsg");
+  if (!store.apiKey) { msg.textContent = "需要先在「设置」里填入 API 密钥，或点「换一批」看内置句子。"; return; }
+  msg.textContent = "正在写……";
+  try {
+    const text = await callClaude("写 3 条适合发在社交平台的中文诗意短句，风格温柔治愈、有画面感、有想象力，每条不超过 25 字。一行一条，不要编号、不要引号、不要解释。", 200);
+    const lines = text.split("\n").map(l => l.trim()).filter(Boolean).slice(0, 3);
+    if (!lines.length) throw new Error("empty");
+    renderSentences(lines);
+    msg.textContent = "✓ 新鲜出炉，点 ♡ 可收藏。";
+  } catch (err) {
+    msg.textContent = "生成失败：" + err.message + "（请检查密钥与网络）";
+  }
+});
+
+const notesInput = document.getElementById("notesInput");
+notesInput.addEventListener("input", () => {
+  clearTimeout(notesInput._t);
+  notesInput._t = setTimeout(() => { store.notes = notesInput.value; saveStore(); }, 500);
+});
+document.getElementById("assocBtn").addEventListener("click", async () => {
+  const msg = document.getElementById("sparkMsg2");
+  const results = document.getElementById("assocResults");
+  if (!store.apiKey) { msg.textContent = "需要先在「设置」里填入 API 密钥。"; return; }
+  const p = currentPoem();
+  const text = p ? ((p.title || "") + "\n" + p.lines.join("\n")).trim() : "";
+  if (!text) { msg.textContent = "先在「写作」里写几句，我再帮你联想意象。"; return; }
+  msg.textContent = "正在联想…";
+  results.innerHTML = "";
+  try {
+    const out = await callClaude("你是诗歌意象助手。根据下面这首诗（或片段）的意境，联想 6 个可能相关的意象词或短语（中文），只输出这 6 个词，用中文逗号分隔，不要解释，不要改写诗。\n\n" + text, 150);
+    const words = out.split(/[，,、\n]/).map(w => w.trim()).filter(Boolean).slice(0, 8);
+    if (!words.length) throw new Error("empty");
+    msg.textContent = "点击词语可加入收集本。";
+    for (const w of words) {
+      const c = document.createElement("button");
+      c.className = "chip";
+      c.textContent = w;
+      c.addEventListener("click", () => {
+        notesInput.value = (notesInput.value ? notesInput.value + "\n" : "") + w;
+        store.notes = notesInput.value; saveStore();
+      });
+      results.appendChild(c);
+    }
+  } catch (err) {
+    msg.textContent = "联想失败：" + err.message + "（请检查密钥与网络）";
+  }
+});
+
+/* ================= 写作 ================= */
+const titleInput = document.getElementById("titleInput");
+const dateInput = document.getElementById("dateInput");
+const bodyInput = document.getElementById("bodyInput");
+const saveState = document.getElementById("saveState");
+const lineCount = document.getElementById("lineCount");
+const statusBtn = document.getElementById("statusBtn");
+let currentId = null, saveTimer = null;
+function currentPoem() { return store.poems.find(p => p.id === currentId); }
+function autoGrow() {
+  bodyInput.style.height = "auto";
+  bodyInput.style.height = Math.max(bodyInput.scrollHeight, window.innerHeight * 0.42) + "px";
+}
+function updateLineCount() {
+  const n = bodyInput.value.split("\n").filter(l => l.trim()).length;
+  lineCount.textContent = n ? n + " 行" : "";
+}
+function loadPoem(id) {
+  const p = store.poems.find(x => x.id === id);
+  if (!p) return;
+  currentId = id;
+  titleInput.value = p.title;
+  dateInput.value = p.date;
+  bodyInput.value = p.lines.join("\n");
+  autoGrow(); updateLineCount();
+  statusBtn.textContent = p.status === "pub" ? "转 为 草 稿" : "发 表";
+  renderThemeRow();
+  saveState.textContent = "";
+}
+function scheduleSave() {
+  saveState.textContent = "…";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const p = currentPoem();
+    if (!p) return;
+    p.title = titleInput.value.trim();
+    p.date = dateInput.value.trim();
+    p.lines = bodyInput.value.split("\n").map(l => l.trim() === "" ? "" : l);
+    while (p.lines.length && p.lines[p.lines.length-1] === "") p.lines.pop();
+    p.updated = Date.now();
+    saveStore();
+    saveState.textContent = "已保存";
+    setTimeout(() => { if (saveState.textContent === "已保存") saveState.textContent = ""; }, 2000);
+  }, 600);
+}
+titleInput.addEventListener("input", scheduleSave);
+dateInput.addEventListener("input", scheduleSave);
+bodyInput.addEventListener("input", () => { autoGrow(); updateLineCount(); scheduleSave(); });
+
+function suggestTheme(text) {
+  let best = "night", bestScore = 0;
+  for (const [theme, words] of Object.entries(KEYWORDS)) {
+    let score = 0;
+    for (const w of words) {
+      let i = -1;
+      while ((i = text.indexOf(w, i+1)) !== -1) score++;
+    }
+    if (score > bestScore) { bestScore = score; best = theme; }
+  }
+  return best;
+}
+const themeRow = document.getElementById("themeRow");
+function renderThemeRow() {
+  const p = currentPoem();
+  themeRow.innerHTML = "";
+  const auto = document.createElement("button");
+  auto.className = "chip suggest";
+  auto.textContent = "✧ 自动匹配";
+  auto.addEventListener("click", () => {
+    if (!p) return;
+    const th = suggestTheme(titleInput.value + bodyInput.value);
+    p.theme = th; saveStore();
+    switchTheme(th); renderThemeRow();
+  });
+  themeRow.appendChild(auto);
+  for (const [key, name] of Object.entries(THEMES)) {
+    const c = document.createElement("button");
+    c.className = "chip" + (p && p.theme === key ? " active" : "");
+    c.textContent = name;
+    c.addEventListener("click", () => {
+      if (!p) return;
+      p.theme = key; saveStore();
+      switchTheme(key); renderThemeRow();
+    });
+    themeRow.appendChild(c);
+  }
+}
+statusBtn.addEventListener("click", () => {
+  const p = currentPoem();
+  if (!p) return;
+  p.status = p.status === "pub" ? "draft" : "pub";
+  saveStore();
+  statusBtn.textContent = p.status === "pub" ? "转 为 草 稿" : "发 表";
+});
+document.getElementById("delBtn").addEventListener("click", () => {
+  const p = currentPoem();
+  if (!p) return;
+  if (!confirm('确定删除《' + (p.title || "无题") + '》吗？此操作不可恢复。')) return;
+  store.poems = store.poems.filter(x => x.id !== currentId);
+  saveStore();
+  if (store.poems.length) loadPoem(store.poems[0].id);
+  else {
+    currentId = null;
+    titleInput.value = ""; dateInput.value = ""; bodyInput.value = "";
+    renderThemeRow();
+  }
+  showPage("library");
+});
+
+/* 预览（写作预览与成品陈列共用） */
+const preview = document.getElementById("preview");
+let previewPrevTheme = null;
+function openPreview(title, date, lines, theme) {
+  if (theme && theme !== currentTheme) {
+    previewPrevTheme = currentTheme;
+    switchTheme(theme);
+  } else {
+    previewPrevTheme = null;
+  }
+  document.getElementById("pvTitle").textContent = title || "无题";
+  document.getElementById("pvDate").textContent = date || "";
+  const body = document.getElementById("pvBody");
+  body.innerHTML = "";
+  lines.forEach((line, n) => {
+    const el = document.createElement("div");
+    if (String(line).trim() === "") el.className = "gap";
+    else {
+      el.className = "line";
+      el.textContent = line;
+      el.style.animationDelay = (0.2 + n * 0.1) + "s";
+    }
+    body.appendChild(el);
+  });
+  preview.classList.add("open");
+  document.body.classList.add("previewing");
+}
+document.getElementById("previewBtn").addEventListener("click", () => {
+  const p = currentPoem();
+  if (!p) return;
+  openPreview(titleInput.value.trim(), dateInput.value.trim(), bodyInput.value.split("\n"), p.theme);
+});
+document.getElementById("previewClose").addEventListener("click", () => {
+  preview.classList.remove("open");
+  document.body.classList.remove("previewing");
+  if (previewPrevTheme) { switchTheme(previewPrevTheme); previewPrevTheme = null; }
+});
+
+/* 成品陈列 */
+function renderGallery() {
+  const grid = document.getElementById("galleryGrid");
+  grid.innerHTML = "";
+  const pubs = store.poems.filter(p => p.status === "pub");
+  if (!pubs.length) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "color:rgba(255,255,255,0.35);font-size:13px;letter-spacing:2px;padding:16px 0";
+    empty.textContent = "还没有已发表的诗";
+    grid.appendChild(empty);
+    return;
+  }
+  for (const p of pubs) {
+    const card = document.createElement("div");
+    card.className = "g-card";
+    card.style.background = gradients[p.theme] || gradients.night;
+    const excerpt = p.lines.filter(l => String(l).trim()).slice(0, 2).join(" / ");
+    const ex = document.createElement("div"); ex.className = "g-excerpt"; ex.textContent = excerpt;
+    const ti = document.createElement("div"); ti.className = "g-title"; ti.textContent = p.title || "无题";
+    const me = document.createElement("div"); me.className = "g-meta";
+    me.textContent = (p.date || "") + " · " + (THEMES[p.theme] || "");
+    card.append(ex, ti, me);
+    card.addEventListener("click", () => openPreview(p.title, p.date, p.lines, p.theme));
+    grid.appendChild(card);
+  }
+}
+
+/* ================= 诗库 ================= */
+const poemList = document.getElementById("poemList");
+const searchInput = document.getElementById("search");
+let filterMode = "all";
+document.querySelectorAll("#filters .chip").forEach(c => c.addEventListener("click", () => {
+  filterMode = c.dataset.f;
+  document.querySelectorAll("#filters .chip").forEach(x => x.classList.toggle("active", x === c));
+  renderList();
+}));
+searchInput.addEventListener("input", renderList);
+function renderList() {
+  const q = searchInput.value.trim();
+  poemList.innerHTML = "";
+  let shown = 0;
+  store.poems.forEach((p, i) => {
+    if (filterMode === "draft" && p.status === "pub") return;
+    if (filterMode === "pub" && p.status !== "pub") return;
+    if (q && !(p.title.includes(q) || p.lines.join("").includes(q))) return;
+    shown++;
+    const item = document.createElement("div");
+    item.className = "p-item";
+    const st = p.status === "pub" ? "pub" : "draft";
+    item.innerHTML = '<div class="pi-title"><span class="pi-status ' + st + '"></span></div>' +
+      '<div class="pi-meta"></div>' +
+      '<div class="pi-ops"><button data-op="up">▲</button><button data-op="down">▼</button></div>';
+    item.querySelector(".pi-title").append(p.title || "无题");
+    item.querySelector(".pi-meta").textContent = (p.date || "") + " · " + (THEMES[p.theme] || "") + " · " + (p.status === "pub" ? "已发表" : "草稿");
+    item.addEventListener("click", e => {
+      const op = e.target.getAttribute && e.target.getAttribute("data-op");
+      if (op) {
+        e.stopPropagation();
+        const j = op === "up" ? i-1 : i+1;
+        if (j < 0 || j >= store.poems.length) return;
+        [store.poems[i], store.poems[j]] = [store.poems[j], store.poems[i]];
+        saveStore(); renderList();
+        return;
+      }
+      loadPoem(p.id);
+      showPage("write");
+    });
+    poemList.appendChild(item);
+  });
+  document.getElementById("libCount").textContent = "共 " + store.poems.length + " 首 · 已发表 " +
+    store.poems.filter(p => p.status === "pub").length + " 首";
+  if (!shown) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "text-align:center;padding:30px 0;color:rgba(255,255,255,0.35);font-size:13px;letter-spacing:2px";
+    empty.textContent = "没有找到诗";
+    poemList.appendChild(empty);
+  }
+}
+document.getElementById("newBtn").addEventListener("click", () => {
+  const d = new Date();
+  const poem = {
+    id: "p" + Date.now(),
+    title: "", theme: "night", status: "draft",
+    date: d.getFullYear() + "." + String(d.getMonth()+1).padStart(2,"0") + "." + String(d.getDate()).padStart(2,"0"),
+    lines: []
+  };
+  store.poems.unshift(poem);
+  saveStore();
+  loadPoem(poem.id);
+  showPage("write");
+  titleInput.focus();
+});
+document.getElementById("expBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(store, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "梦蝶诗库备份-" + todayStr() + ".json";
+  a.click();
+});
+document.getElementById("impBtn").addEventListener("click", () => document.getElementById("impFile").click());
+document.getElementById("impFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data || !Array.isArray(data.poems)) throw new Error();
+      if (!confirm("导入将覆盖当前诗库（" + store.poems.length + " 首），确定吗？建议先导出备份。")) return;
+      store = data;
+      if (!Array.isArray(store.favs)) store.favs = [];
+      saveStore();
+      if (store.poems.length) loadPoem(store.poems[0].id);
+      notesInput.value = store.notes || "";
+      renderList();
+    } catch (err) { alert("文件格式不对，请选择之前导出的备份文件。"); }
+  };
+  reader.readAsText(f);
+  e.target.value = "";
+});
+
+/* ================= 成集 ================= */
+document.getElementById("pubPick").addEventListener("click", () => document.getElementById("pubFile").click());
+document.getElementById("pubFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const html = reader.result;
+    const marker = /\/\*POEMS_START\*\/[\s\S]*?\/\*POEMS_END\*\//;
+    if (!marker.test(html)) {
+      document.getElementById("pubMsg").textContent = "✗ 这个文件里找不到诗集数据标记，请确认选择的是 poems.html。";
+      return;
+    }
+    const pub = store.poems.filter(p => p.status === "pub").map(p => ({
+      title: p.title || "无题", date: p.date, theme: p.theme, lines: p.lines
+    }));
+    const block = "/*POEMS_START*/\nconst poems = " + JSON.stringify(pub, null, 2) + ";\n/*POEMS_END*/";
+    const out = html.replace(marker, block);
+    const blob = new Blob([out], { type: "text/html" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "poems.html";
+    a.click();
+    document.getElementById("pubMsg").textContent = "✓ 新版诗集已生成并下载（" + pub.length + " 首）。用它替换旧的 poems.html 即可。";
+  };
+  reader.readAsText(f);
+  e.target.value = "";
+});
+
+/* ================= 设置 ================= */
+document.getElementById("setSave").addEventListener("click", () => {
+  store.apiKey = document.getElementById("keyInput").value.trim();
+  saveStore();
+  document.getElementById("setMsg").textContent = store.apiKey ? "✓ 已保存。" : "已清空密钥。";
+});
+
+/* ================= 启动 ================= */
+loadStore();
+notesInput.value = store.notes || "";
+document.getElementById("keyInput").value = store.apiKey || "";
+currentTheme = "cover";
+setBackground("cover");
+initParticles("cover");
+draw();
+initDaily();
+refillBag();
+nextSentences();
+if (store.poems.length) loadPoem(store.poems[0].id);
+else renderThemeRow();
+renderList();
+initCloud();
+</script>
+</body>
+</html>
