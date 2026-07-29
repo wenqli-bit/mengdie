@@ -901,6 +901,7 @@ function showPage(name) {
   if (name === "write") {
     const p = currentPoem();
     switchTheme(p ? p.theme : "night");
+    growWhenVisible();
   } else if (name === "home") {
     switchTheme("cover");
   } else if (name === "library") {
@@ -1033,9 +1034,16 @@ const statusBtn = document.getElementById("statusBtn");
 let currentId = null, saveTimer = null;
 function currentPoem() { return store.poems.find(p => p.id === currentId); }
 function autoGrow() {
+  // 页面隐藏时 scrollHeight 为 0，会把内容裁掉，等可见后再量
+  if (!bodyInput.offsetParent) { bodyInput._needGrow = true; return; }
+  bodyInput._needGrow = false;
   bodyInput.style.height = "auto";
-  bodyInput.style.height = Math.max(bodyInput.scrollHeight, window.innerHeight * 0.42) + "px";
+  bodyInput.style.height = Math.max(bodyInput.scrollHeight + 4, window.innerHeight * 0.42) + "px";
 }
+function growWhenVisible() {
+  requestAnimationFrame(() => { autoGrow(); requestAnimationFrame(autoGrow); });
+}
+window.addEventListener("resize", growWhenVisible);
 function updateLineCount() {
   const n = bodyInput.value.split("\n").filter(l => l.trim()).length;
   lineCount.textContent = n ? n + " 行" : "";
@@ -1047,7 +1055,7 @@ function loadPoem(id) {
   titleInput.value = p.title;
   dateInput.value = p.date;
   bodyInput.value = p.lines.join("\n");
-  autoGrow(); updateLineCount();
+  growWhenVisible(); updateLineCount();
   statusBtn.textContent = p.status === "pub" ? "转 为 草 稿" : "发 表";
   renderThemeRow();
   saveState.textContent = "";
@@ -1364,6 +1372,8 @@ if (store.poems.length) loadPoem(store.poems[0].id);
 else renderThemeRow();
 renderList();
 initCloud();
+// 字体加载完成后行高会变，重新量一次纸笺高度
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(growWhenVisible);
 </script>
 </body>
 </html>
